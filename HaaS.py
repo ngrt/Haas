@@ -1,5 +1,7 @@
-from flask import Flask
+from flask import Flask, request, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+import uuid
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sealdarethebest'
@@ -29,6 +31,19 @@ class Hash(db.Model):
 def hello_world():
     return 'Hello World!'
 
+@app.route('/user', methods=['POST'])
+def create_user():
+
+    data = request.get_json()
+
+    hashed_password = generate_password_hash(data["password"], method='sha256')
+
+    new_user = User(public_id=str(uuid.uuid4()), name=data['name'], email=data['email'], password=hashed_password, admin=False)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({'message': 'New user created'})
+
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
