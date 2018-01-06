@@ -96,6 +96,16 @@ def login():
 
     return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
+@app.route('/generateDummyHash')
+@token_required
+def generateDummyHash(current_user):
+    dummy_hash = {'hash': "00000000000000000000000000000000"}
+
+    return jsonify(dummy_hash)
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
