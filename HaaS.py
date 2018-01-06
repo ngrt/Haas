@@ -9,11 +9,15 @@ from functools import wraps
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sealdarethebest'
 
+#configurations for ORM SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///config/haas.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
+#object db that instantiates SQLAlchemy
 db = SQLAlchemy(app)
 
+
+#2 models User and Hash
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True)
@@ -30,6 +34,7 @@ class Hash(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
+#decorator to check if the user is logged-in
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -51,11 +56,13 @@ def token_required(f):
 
     return decorated
 
+
 @app.route('/')
 @token_required
 def hello_world(current_user):
     return 'Hello World!'
 
+#route to create a User
 @app.route('/user', methods=['POST'])
 def create_user():
 
@@ -69,6 +76,7 @@ def create_user():
 
     return jsonify({'message': 'New user created'})
 
+#route to check the credentials given and return a token available 30 min
 @app.route('/login')
 def login():
     auth = request.authorization
