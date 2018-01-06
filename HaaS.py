@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 import jwt
 import datetime
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sealdarethebest'
@@ -29,8 +30,30 @@ class Hash(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        if 'x-access-token' in request.headers:
+            token = request.headers['x-access-token']
+
+        if not token:
+            return jsonify({'message': 'Token is missing!'}), 401
+
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'])
+            current_user = User.query.filter_by(public_id=data['public_id']).first()
+        except:
+            return jsonify({'message': 'Token is invalid'}), 401
+
+        return f(current_user, *args, **kwargs)
+
+    return decorated
+
 @app.route('/')
-def hello_world():
+@token_required
+def hello_world(current_user):
     return 'Hello World!'
 
 @app.route('/user', methods=['POST'])
