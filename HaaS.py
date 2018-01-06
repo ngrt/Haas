@@ -50,6 +50,26 @@ def token_required(f):
 
     return decorated
 
+#resonds information about a given user
+@app.route('/user/<public_id>', methods=['GET'])
+@token_required
+def get_one_user(current_user, public_id):
+
+    user = User.query.filter_by(public_id=public_id).first()
+
+    if not user:
+        return jsonify({'message' : 'No user found!'})
+
+    user_data = {}
+    user_data['public_id'] = user.public_id
+    user_data['id'] = user.id
+    user_data['name'] = user.name
+    user_data['email'] = user.email
+    user_data['password'] = user.password
+    user_data['admin'] = user.admin
+
+    return jsonify({'user' : user_data})
+
 #route to create a User
 @app.route('/register', methods=['POST'])
 def create_user():
@@ -101,7 +121,6 @@ def calculateHash(current_user):
     new_hash = Hash(data=data['data'], algo=data['algo'], iteration=data["iteration"])
 
     return jsonify({'hash': new_hash.hash()})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
