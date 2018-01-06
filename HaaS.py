@@ -5,6 +5,7 @@ import uuid
 import jwt
 import datetime
 from functools import wraps
+from hash import Hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sealdarethebest'
@@ -25,13 +26,6 @@ class User(db.Model):
     email = db.Column(db.String(50))
     password = db.Column(db.String(50))
     admin = db.Column(db.Boolean)
-    hashes = db.relationship('Hash', backref='user', lazy=True)
-
-class Hash(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    hash = db.Column(db.String(255), unique=True)
-    created_at = db.Column(db.DateTime)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
 #decorator to check if the user is logged-in
@@ -56,14 +50,8 @@ def token_required(f):
 
     return decorated
 
-
-@app.route('/')
-@token_required
-def hello_world(current_user):
-    return 'Hello World!'
-
 #route to create a User
-@app.route('/user', methods=['POST'])
+@app.route('/register', methods=['POST'])
 def create_user():
 
     data = request.get_json()
@@ -96,6 +84,7 @@ def login():
 
     return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
+#endpoint to test the API
 @app.route('/generateDummyHash')
 @token_required
 def generateDummyHash(current_user):
@@ -103,8 +92,15 @@ def generateDummyHash(current_user):
 
     return jsonify(dummy_hash)
 
+#endpoint receiving a json and returning the hash
+@app.route('/calculateHash', methods=['POST'])
+@token_required
+def calculateHash(current_user):
+    data = request.get_json()
+    print(data)
+    new_hash = Hash(data=data['data'], algo=data['algo'], iteration=data["iteration"])
 
-
+    return jsonify({'hash': new_hash.hash()})
 
 
 if __name__ == '__main__':
